@@ -4,4 +4,4 @@ metadata:
   name: test-sa
   namespace: webhook-demo
   labels:
-    hei: hallo
+    mi.clientid.webhook/azure-mi-client-name: <INSERT HERE>

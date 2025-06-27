@@ -25,20 +25,6 @@ This repository contains:
 
 ---
 
-## Deploying to Kubernetes
-
-1. Push both images to your container registry.
-2. Edit `/deploy/k8s/deployment.yaml`:
-   - Set `image:` for `webhook-server` to your built image.
-   - Set `image:` for `cert-init` (the init container) to your built init container image.
-3. Apply the manifests:
-   ```bash
-   kubectl apply -f deploy/k8s/deployment.yaml
-   kubectl apply -f deploy/k8s/webhook.yaml
-   ```
-
-The init container will generate a self-signed certificate and place it in `/etc/webhook/certs`, which is then used by the webhook server.
-
 ## Deploying to kind cluster
 
 1. Build images as specified above
@@ -49,12 +35,22 @@ The init container will generate a self-signed certificate and place it in `/etc
 4. Edit `/deploy/k8s/deployment.yaml`:
    - Set `image:` for `webhook-server` to your built image.
    - Set `image:` for `cert-init` (the init container) to your built init container image.
-3. Apply the manifests:
+   - Set the following
+     - `AZURE_TENANT_ID`: The Azure tenant.
+     - `AZURE_SUBSCRIPTION_ID`: The Azure subscription to look for MI client ID.
+     - `AZURE_CLIENT_ID`: The Azure identity client ID to authenticate as against Entra ID.
+     - `AZURE_CLIENT_SECRET`: Client secret for that Azure identity. Do not use in production (either use secrets or workload identity which do not need this).
+3. Apply the server and webhook manifests:
    ```bash
    kubectl apply -f deploy/k8s/deployment.yaml
    kubectl apply -f deploy/k8s/webhook.yaml
    ```
+4. Edit `deploy/k8s/test-sa.yaml` to include `mi.clientid.webhook/azure-mi-client-name` annotation.
+5. Apply the service account:
+   ```bash
+   kubectl apply -f deploy/k8s/test-sa.yaml
+   ```
+6. Verify that the service account has been mutated to include the `azure.workload.identity/client-id` annotation: `kubectl -n webhook-demo get sa test-sa -o yaml`
 
 ---
 
-**Note:** For production, use a proper CA and certificate management process. The provided setup is for development and demonstration purposes.
