@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: test-sa
+  namespace: webhook-demo
+  labels:
+    hei: hallo

@@ -1,0 +1,25 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: serviceaccount-label-mutator
+webhooks:
+  - name: serviceaccount-label-mutator.webhook-demo.svc
+    admissionReviewVersions: ["v1"]
+    sideEffects: None
+    clientConfig:
+      service:
+        name: webhook-server
+        namespace: webhook-demo
+        path: /mutate
+        port: 443
+      caBundle: <CA_BUNDLE>
+    rules:
+      - apiGroups: ["*"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["serviceaccounts"]
+        scope: "Namespaced"
+    failurePolicy: Fail
+    matchPolicy: Equivalent
+    objectSelector: {}
+    namespaceSelector: {}

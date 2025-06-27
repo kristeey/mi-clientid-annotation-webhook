@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: webhook-demo
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: webhook-server
+  namespace: webhook-demo
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhook-server
+  namespace: webhook-demo
+spec:
+  ports:
+    - port: 443
+      targetPort: 8443
+  selector:
+    app: webhook-server
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webhook-server
+  namespace: webhook-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webhook-server
+  template:
+    metadata:
+      labels:
+        app: webhook-server
+    spec:
+      serviceAccountName: webhook-server
+      initContainers:
+        - name: cert-init
+          image: webhook-init-container:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: CERT_DIR
+              value: /etc/webhook/certs
+          volumeMounts:
+            - name: tls-certs
+              mountPath: /etc/webhook/certs
+      containers:
+        - name: webhook-server
+          image: mi-client-mutating-webhook-server:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8443
+          volumeMounts:
+            - name: tls-certs
+              mountPath: /etc/webhook/certs
+              readOnly: true
+      volumes:
+        - name: tls-certs
+          emptyDir: {}
